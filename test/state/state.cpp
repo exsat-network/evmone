@@ -667,12 +667,10 @@ TransactionReceipt transition(const StateView& state_view, const BlockInfo& bloc
     state.touch(block.coinbase).balance += gas_used * priority_gas_price;
 
     // Cumulative gas used is unknown in this scope.
-    TransactionReceipt receipt{tx.type, result.status_code, gas_used, gas_refund, {},
-        host.take_logs(), {}, state.build_diff(rev)};
-
-    // Cannot put it into constructor call because logs are std::moved from host instance.
-    receipt.logs_bloom_filter = compute_bloom_filter(receipt.logs);
-
-    return receipt;
+    // eos-evm: bloom filter production removed (non-consensus; not folded into R, and
+    // bloom_filter.cpp is not compiled by the contract). gas_refund (v0.22) preserved.
+    return TransactionReceipt{
+        tx.type, result.status_code, gas_used, gas_refund, {}, host.take_logs(),
+        state.build_diff(rev)};
 }
 }  // namespace evmone::state
