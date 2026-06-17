@@ -1,7 +1,7 @@
 [submodule "evmc"]
 	path = evmc
-	url = https://github.com/erigontech/evmc.git
-        branch = gas_cost_in_tracers
+	url = https://github.com/exsat-network/evmc.git
+	branch = vaulta-evm
 [submodule "evm-benchmarks"]
 	path = test/evm-benchmarks
 	url = https://github.com/ipsilon/evm-benchmarks
