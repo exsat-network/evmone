@@ -17,7 +17,8 @@ namespace evmone
 {
 /// Loads big endian int16_t from data. Unsafe.
 /// TODO: Move it to intx
-inline int16_t read_int16_be(auto it) noexcept
+template <typename It>
+inline int16_t read_int16_be(It it) noexcept
 {
     const uint8_t h = *it++;
     const uint8_t l = *it;
@@ -26,7 +27,8 @@ inline int16_t read_int16_be(auto it) noexcept
 
 /// Loads big endian uint16_t from data. Unsafe.
 /// TODO: Move it to intx
-inline uint16_t read_uint16_be(auto it) noexcept
+template <typename It>
+inline uint16_t read_uint16_be(It it) noexcept
 {
     const uint8_t h = *it++;
     const uint8_t l = *it;
