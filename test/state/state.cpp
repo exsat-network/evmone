@@ -517,7 +517,13 @@ TransactionReceipt transition(const StateView& state_view, const BlockInfo& bloc
     state.touch(block.coinbase).balance += gas_used * priority_gas_price;
 
     // Cumulative gas used is unknown in this scope.
+#ifdef EOSEVM_BRIDGE
+    return TransactionReceipt{
+        tx.type, result.status_code, gas_used, {}, host.take_logs(), state.build_diff(rev),
+        host.take_filtered()};
+#else
     return TransactionReceipt{
         tx.type, result.status_code, gas_used, {}, host.take_logs(), state.build_diff(rev)};
+#endif
 }
 }  // namespace evmone::state
