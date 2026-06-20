@@ -98,6 +98,20 @@ struct Log
     std::vector<bytes32> topics;
 };
 
+#ifdef EOSEVM_BRIDGE
+// >>> eos-evm bridge patch: capture CALLs to reserved (0xbb-prefixed) addresses, including their
+// calldata, so the contract can deliver EVM->native messages (onbridgemsg). Stock evmone does not
+// surface internal-call inputs; this small additive hook (mirroring eos-evm's silkworm fork) does.
+struct FilteredMessage
+{
+    address addr_sender;
+    address recipient;
+    intx::uint256 value;
+    bytes data;
+};
+// <<< eos-evm bridge patch
+#endif
+
 /// Transaction Receipt
 ///
 /// This struct is used in two contexts:
@@ -127,6 +141,12 @@ struct TransactionReceipt
 
     /// Root hash of the state after this transaction. Used only in old pre-Byzantium transactions.
     // std::optional<bytes32> post_state;
+
+#ifdef EOSEVM_BRIDGE
+    // >>> eos-evm bridge patch: reserved-address CALLs captured during execution (not RLP-encoded).
+    std::vector<FilteredMessage> filtered_messages;
+    // <<< eos-evm bridge patch
+#endif
 };
 
 }  // namespace evmone::state

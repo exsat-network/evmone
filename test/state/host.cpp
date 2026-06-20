@@ -5,6 +5,9 @@
 #include "host.hpp"
 #include "precompiles.hpp"
 #include <evmone/constants.hpp>
+#ifdef EOSEVM_BRIDGE
+#include <cstring>  // std::memcmp (eos-evm bridge patch)
+#endif
 
 namespace evmone::state
 {
@@ -379,6 +382,9 @@ evmc::Result Host::call(const evmc_message& orig_msg) noexcept
         return evmc::Result{EVMC_FAILURE, orig_msg.gas};  // Light exception.
 
     const auto logs_checkpoint = m_logs.size();
+#ifdef EOSEVM_BRIDGE
+    const auto filtered_checkpoint = m_filtered.size();
+#endif
     const auto state_checkpoint = m_state.checkpoint();
 
     auto result = execute_message(*msg);
@@ -392,11 +398,31 @@ evmc::Result Host::call(const evmc_message& orig_msg) noexcept
         // Revert.
         m_state.rollback(state_checkpoint);
         m_logs.resize(logs_checkpoint);
+#ifdef EOSEVM_BRIDGE
+        m_filtered.resize(filtered_checkpoint);  // drop captures from this reverted frame
+#endif
 
         // The 0x03 quirk: the touch on this address is never reverted.
         if (is_03_touched && m_rev >= EVMC_SPURIOUS_DRAGON)
             m_state.touch(addr_03);
     }
+#ifdef EOSEVM_BRIDGE
+    // >>> eos-evm bridge patch: on success, capture CALLs (with calldata) to reserved addresses
+    // (prefix = 12 bytes of 0xbb). Value-only egress is recovered from the state diff instead.
+    else
+    {
+        static constexpr uint8_t reserved_prefix[12] = {
+            0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb};
+        if (msg->input_size > 0 &&
+            std::memcmp(msg->recipient.bytes, reserved_prefix, sizeof(reserved_prefix)) == 0)
+        {
+            m_filtered.push_back(FilteredMessage{
+                msg->sender, msg->recipient, intx::be::load<intx::uint256>(msg->value),
+                bytes{msg->input_data, msg->input_data + msg->input_size}});
+        }
+    }
+    // <<< eos-evm bridge patch
+#endif
     return result;
 }
 

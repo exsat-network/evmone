@@ -669,8 +669,14 @@ TransactionReceipt transition(const StateView& state_view, const BlockInfo& bloc
     // Cumulative gas used is unknown in this scope.
     // eos-evm: bloom filter production removed (non-consensus; not folded into R, and
     // bloom_filter.cpp is not compiled by the contract). gas_refund (v0.22) preserved.
+#ifdef EOSEVM_BRIDGE
+    return TransactionReceipt{
+        tx.type, result.status_code, gas_used, gas_refund, {}, host.take_logs(),
+        state.build_diff(rev), host.take_filtered()};
+#else
     return TransactionReceipt{
         tx.type, result.status_code, gas_used, gas_refund, {}, host.take_logs(),
         state.build_diff(rev)};
+#endif
 }
 }  // namespace evmone::state

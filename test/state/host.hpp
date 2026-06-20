@@ -43,6 +43,11 @@ class Host : public evmc::Host
     const BlockHashes& m_block_hashes;
     const Transaction& m_tx;
     std::vector<Log> m_logs;
+#ifdef EOSEVM_BRIDGE
+    // >>> eos-evm bridge patch
+    std::vector<FilteredMessage> m_filtered;
+    // <<< eos-evm bridge patch
+#endif
 
 public:
     Host(evmc_revision rev, evmc::VM& vm, State& state, const BlockInfo& block,
@@ -51,6 +56,9 @@ public:
     {}
 
     [[nodiscard]] std::vector<Log>&& take_logs() noexcept { return std::move(m_logs); }
+#ifdef EOSEVM_BRIDGE
+    [[nodiscard]] std::vector<FilteredMessage>&& take_filtered() noexcept { return std::move(m_filtered); }
+#endif
 
     evmc::Result call(const evmc_message& msg) noexcept override;
 
