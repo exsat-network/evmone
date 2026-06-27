@@ -6,11 +6,19 @@
 /// EVMC instance (class VM) and entry point of evmone is defined here.
 
 #include "vm.hpp"
+#if not defined(ANTELOPE)
 #include "advanced_execution.hpp"
+#endif
 #include "baseline.hpp"
 #include <evmone/evmone.h>
 #include <cassert>
+#if not defined(ANTELOPE)
 #include <iostream>
+#endif
+
+#if !defined(PROJECT_VERSION)
+#define PROJECT_VERSION "0.0.0"
+#endif
 
 namespace evmone
 {
@@ -33,12 +41,15 @@ evmc_set_option_result set_option(evmc_vm* c_vm, char const* c_name, char const*
     const auto value = (c_value != nullptr) ? std::string_view{c_value} : std::string_view{};
     auto& vm = *static_cast<VM*>(c_vm);
 
+#if not defined(ANTELOPE)
     if (name == "advanced")
     {
         c_vm->execute = evmone::advanced::execute;
         return EVMC_SET_OPTION_SUCCESS;
     }
-    else if (name == "cgoto")
+    else
+#endif
+    if (name == "cgoto")
     {
 #if EVMONE_CGOTO_SUPPORTED
         if (value == "no")
@@ -53,17 +64,23 @@ evmc_set_option_result set_option(evmc_vm* c_vm, char const* c_name, char const*
     }
     else if (name == "trace")
     {
+#if not defined(ANTELOPE)
         vm.add_tracer(create_instruction_tracer(std::clog));
         return EVMC_SET_OPTION_SUCCESS;
+#endif
     }
     else if (name == "histogram")
     {
+#if not defined(ANTELOPE)
         vm.add_tracer(create_histogram_tracer(std::clog));
         return EVMC_SET_OPTION_SUCCESS;
+#endif
     }
     else if (name == "opcode.count")
     {
+#if not defined(ANTELOPE)
         vm.add_tracer(create_instruction_counter(value));
+#endif
     }
     return EVMC_SET_OPTION_INVALID_NAME;
 }
