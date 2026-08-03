@@ -407,14 +407,19 @@ evmc::Result Host::call(const evmc_message& orig_msg) noexcept
             m_state.touch(addr_03);
     }
 #ifdef EOSEVM_BRIDGE
-    // >>> eos-evm bridge patch: on success, capture CALLs (with calldata) to reserved addresses
-    // (prefix = 12 bytes of 0xbb). Value-only egress is recovered from the state diff instead.
+    // >>> eos-evm bridge patch: on success, capture EVERY CALL to a reserved address (prefix = 12
+    // bytes of 0xbb), with or without calldata — matching eos-evm's filter, which is just
+    // `is_reserved_address(message.recipient)`.
+    //
+    // Capturing the no-calldata calls too is what makes the contract's egress reconciliation exact:
+    // every wei that reaches a reserved address via a CALL has a corresponding message, so the sum of
+    // an account's messages equals its balance delta. A narrower filter would leave value with no
+    // message behind it and make that check unsatisfiable. Empty calldata simply means an empty memo.
     else
     {
         static constexpr uint8_t reserved_prefix[12] = {
             0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb};
-        if (msg->input_size > 0 &&
-            std::memcmp(msg->recipient.bytes, reserved_prefix, sizeof(reserved_prefix)) == 0)
+        if (std::memcmp(msg->recipient.bytes, reserved_prefix, sizeof(reserved_prefix)) == 0)
         {
             m_filtered.push_back(FilteredMessage{
                 msg->sender, msg->recipient, intx::be::load<intx::uint256>(msg->value),
